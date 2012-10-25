@@ -1,6 +1,6 @@
 .. Settings
-   @title: Cloud Foundry 30天入門筆記
-   @authors: 林彥宏（lyhcode）
+   @title: Cloud Foundry 雲端應用開發實戰
+   @authors: lyhcode
    @language: zh_TW
    @latex_parindent: 2em
    @latex_paper_size: b5
@@ -17,9 +17,9 @@
    %% \renewcommand{\sectionmark}[1]{\markright{~\thesection~~#1~}{}}
    \renewcommand\bibname{參考資料}
 
-##########################
-Cloud Foundry 30天入門筆記
-##########################
+############################
+Cloud Foundry 雲端應用開發實戰
+############################
 
 .. toctree::
    :maxdepth: 3

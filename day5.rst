@@ -1,132 +1,97 @@
-************************
-Day 5 開發 MVC 應用程式
-************************
+***************
+基礎程式調校與除錯
+***************
 
-發佈 Ruby on Rails 應用程式
-=========================
+應用程式調校與除錯技巧
+==================
 
-Ruby on Rails 是廣受網站開發者喜愛的開發框架，將 Rails 應用程式發佈倒 Cloud Foundry 也相當容易。
-
-使用 RubyGems 安裝 Rails。
+Cloud Foundry 將執行階段使用的參數，透過環境變數方式傳遞給應用程式，這種設計讓不同作業系統及程式語言有共同的存取方法。在前面的章節介紹過 Ruby Sinatra 簡易應用程式的佈署，為了觀察環境變數、方便進行除錯、測試及取得資訊，我們可以用 Sinatra 撰寫簡易的程式，將環境變數 ``ENV['VCAP_SERVICES']`` 完整印出以供開發者參考。
 
 ::
 
-    gem install rails
+    require 'sinatra'
 
-檢查版本編號以確認 Rails 安裝成功。
-
-::
-
-    rails --version
-
-建立一個名為 blog 的新專案。
-
-::
-
-    rails new blog
-    cd blog
-
-使用 bundle 指令安裝依賴的套件。
-
-::
-
-    bundle package
-    bundle install
-
-接下來需要設定 Assets，也就是位於 ``app/assets`` 資料夾下的 CSS、JS 及圖片檔，這些檔案需要預先經過編譯處理，才能順利發佈到 PaaS。
-
-修改 ``config/environment/production.rb`` 設定。
-
-::
-
-    config.serve_static_assets = true
-    config.assets.compile = true
-
-修改 ``config/application.rb`` 設定。
-
-::
-
-    config.assets.enabled = true
-
-清除並重新編譯 Assets。
-
-::
-
-    RAILS_ENV=production bundle exec rake assets:clean
-    RAILS_ENV=production bundle exec rake assets:precompile
-
-執行 ``rails server`` 指令可以建立本地的 WEBrick 測試伺服器，使用瀏覽器開啟「http://localhost:3000」，如果看到 Rails 預設的畫面，就表示應用程式可以正常執行。測試完畢後，使用 Ctrl+C 停止伺服器。
-
-再來是執行 ``vmc push`` 指令，將 Rails 專案發佈到 Cloud Foundry，假設輸入的應用程式名稱為 ``my-first-blog``\ ，成功佈署到 PaaS 之後，就可以使用「http://my-first-blog.cloudfoundry.com」瀏覽網站。
-
-.. image:: images/rails-screen-1.png
-   :width: 80%
-   :align: center
-
-資料庫的部份以 MySQL 為例，將 Gemfile 修改如下：
-
-::
-    # 註解原設定
-    # gem 'sqlite3'
-
-    # 加上以下設定
-    group :development do
-      gem 'sqlite3'
-    end
-       
-    group :production do
-      gem 'mysql2'
+    get '/env' do
+        ENV['VCAP_SERVICES']
     end
 
-這組設定使 Rails 在開發階段使用 sqlite3 資料庫，而發佈到 Cloud Foundry 後則使用 MySQL。
+需要注意的地方是安全議題，在一般訪客可以存取的頁面，請勿為了方便將環境變數傾印，這可能會造成系統安全的漏洞。
 
-另外針對 Ruby 1.9，同時也需要修改 Gemfile 的 ``jquery-rails`` 設定如下：
-
-::
-
-    # gem 'jquery-rails'
-    gem 'cloudfoundry-jquery-rails'
-
-使用 ``bundle`` 重新安裝依賴的套件。
+將應用程式發佈到 Cloud Foundry 雲端時，有可能遇到啟動失敗或執行錯誤的情況，此時需要查看記錄檔進行偵錯。Cloud Foundry 將應用程式的記錄檔案放在雲端儲存空間的 ``logs`` 資料夾路徑下，使用以下指令可以列出 ``logs`` 資料夾包含的檔案清單：
 
 ::
 
-    bundle package
-    bundle install
+    vmc files myfirstblog logs
 
-接下來使用 Rails 的 Scaffold 功能快速建立應用程式的雛形，在此例中「Post」包含 name、title、content 三項資料欄位。
+對於大部分的應用程式，\ ``logs`` 資料夾至少會包含以下的記錄檔：
 
-::
+* stdout.log
+* stderr.log
 
-    rails generate scaffold Post name:string title:string content:text
-    rake db:migrate
+上述的檔案從檔名可以判斷，就是對應到標準輸出（STDIN）及標準錯誤輸出（STDOUT）。這是一般應用程式共通的標準，程式在執行時顯示在終端機（Terminal）畫面的文字訊息，Cloud Foundry 會將原本顯示在終端機的訊息重導（redirect）至文字檔，若是一般訊息會儲存到 stdout.log，如果程式發生錯誤就會將訊息則儲存至 stderr.log。
 
-執行 ``rails server`` 啟動測試伺服器，瀏覽「http://localhost:3000/posts」，看到「Listing posts」即可測試列表、新增、修改及移除的基本操作。
-
-設定資料庫的部份，對剛入門 Cloud Foundry 的讀者來說，可能會覺得有些複雜。以 MySQL 來說，通常只需要修改 ``config/database.yml`` ；但是我們在發佈應用程式之前，就先得知 Cloud Foundry 自動產生的資料庫設定，因為在雲端的架構裡，由哪一部機器實際提供資料庫服務，是由 PaaS 平台來決定。一般在 database.yml 常見的 MySQL 設定如下：
+查看記錄檔的方法，可以使用檔案完整的路徑： 
 
 ::
 
-    production:
-      adapter: mysql2
-      encoding: utf8
-      reconnect: false
-      database: dbname
-      host: localhost
-      port: 3306
-      username: root
-      password: somepwd
-      pool: 5
-      timeout: 5000
-      #socket: /tmp/mysql.sock
+    vmc files myfirstblog logs/stderr.log
 
-在設定資料庫之前，我們需要先建立 Cloud Foundry 的資料庫服務。
+另外也可以使用 VMC 提供的 ``logs`` 指令，以及用來檢查應用程式當機的 ``crashes`` 及 ``crashlogs`` 指令：
+
+::
+
+    vmc logs myfirstblog
+    vmc crashes myfirstblog
+    vmc crashlogs myfirstblog
+
+查詢應用程式目前的執行狀態，可以透過 ``stats`` 指令查詢：
+
+::
+
+    vmc stats myfirstblog
+
+將應用程式發佈到 Cloud Foundry 等雲端架構的 PaaS 平台，更容易進行水平擴充（scale out）的好處，藉由雲端的基礎設施得到更好的可延展性（scalability）；在應用程式需要更大的負載量時，透過增加 Instances 的方式，就可以讓應用程式擁有更多處理器及記憶體的資源。
+
+在預設情況下，Cloud Foundry 的應用程式只會有一個 Instance。
+
+::
+
+    +----------+-------------+----------------+--------------+-------------+
+    | Instance | CPU (Cores) | Memory (limit) | Disk (limit) | Uptime      |
+    +----------+-------------+----------------+--------------+-------------+
+    | 0        | 0.3% (4)    | 54.9M (256M)   | 50.0M (2G)   | 0d:0h:7m:9s |
+    +----------+-------------+----------------+--------------+-------------+
+
+增加 Instances 數量，可以讓應用程式效能提昇，因此能承受更高的負載量；由於 PaaS 通常以用量計費，專案開發初期只需要使用一個 Instance 就已足夠，之後隨時可以依照流量增加或減少 Instances 數量。調整 Instance 數量的指令是：
+
+::
+
+    vmc instances myfirstblog 3
+
+執行上述的指令，Instances 數量就會擴充為 3 個。Cloud Foundry 的免費方案有記憶體總容量限制，所以 Instances 佔用的記憶體總量不能超過其限制，否則就會顯示調整失敗的訊息。執行成功後，重新以「vmc stats myfirstblog」指令查看狀態，可以發現 Instances 數量已經改變。
+
+::
+
+    +----------+-------------+----------------+--------------+--------------+
+    | Instance | CPU (Cores) | Memory (limit) | Disk (limit) | Uptime       |
+    +----------+-------------+----------------+--------------+--------------+
+    | 0        | 0.4% (4)    | 54.9M (256M)   | 50.0M (2G)   | 0d:0h:6m:31s |
+    | 1        | 0.5% (4)    | 52.7M (256M)   | 50.0M (2G)   | 0d:0h:4m:24s |
+    | 2        | 0.5% (4)    | 52.8M (256M)   | 50.0M (2G)   | 0d:0h:4m:24s |
+    +----------+-------------+----------------+--------------+--------------+
+
+
+建置 MySQL 資料庫
+================
+
+
+使用 VMC 的「create-service」指令建立新服務。
 
 ::
 
     vmc create-service
 
-執行這個指令會顯示以下的選單，輸入 5 選擇 MySQL 資料庫。
+輸入數字 5 並按 Enter 鍵，選擇建立 MySQL 資料庫。
 
 ::
 
@@ -137,78 +102,34 @@ Ruby on Rails 是廣受網站開發者喜愛的開發框架，將 Rails 應用�
     5: mysql
     Which service would you like to provision?: 
 
-新服務建立成功後，系統會回應 OK 的訊息如下。
+新的 MySQL 資料庫服務建立成功後，系統會回應 OK 的訊息如下。
 
 ::
 
     Creating Service [mysql-50d38]: OK
 
-其中 **mysql-50d38** 就是新服務的名稱，我們還需要將這個服務和應用程式關聯起來。
+雖然我們只要在應用程式將環境變數傾印出來，可以取得 MySQL 資料庫的資訊；但我們無法直接使用 MySQL Client 建立連線，因為這些服務僅提供 PaaS 的應用程式連結。但開發者無法存取資料庫，對資料的維護、備份作業來說，實在相當不容易進行，為此 Cloud Foundry 提供 tunnel 的方式，讓開發者的電腦與 PaaS 服務之間可以建立一條虛擬的通道。
+
+以下的指令會建立 tunnel 連結到 mysql-50d38 服務。
 
 ::
 
-    vmc bind-service mysql-50d38 my-first-blog
+    vmc tunnel mysql-50d38
 
-如果需要檢視應用程式與服務之間的關聯，可以執行 ``vmc apps`` ，以下是輸出的範例：
-
-::
-
-    +---------------+----+---------+--------------------------------+-------------+
-    | Application   | #  | Health  | URLS                           | Services    |
-    +---------------+----+---------+--------------------------------+-------------+
-    | my-first-blog | 1  | RUNNING | my-first-blog.cloudfoundry.com | mysql-50d38 |
-    +---------------+----+---------+--------------------------------+-------------+
-
-那應用程式如何得知資料庫的設定呢？方法是透過 ``ENV['VCAP_SERVICES']`` 這個環境變數，Cloud Foundry 會將服務的設定以此變數傳遞給應用程式。\ ``ENV['VCAP_SERVICES']`` 的內容是 JSON 格式，請參考以下的範例。
+請注意，在第一次使用時，程式可能會提示缺少 Ruby 的 ``caldecott`` 套件，此時我們需要先用 RubyGems 安裝。
 
 ::
 
-    {
-        "mysql-5.1": [{
-            "name": "mysql-50d38",
-            "label": "mysql-5.1",
-            "plan": "free",
-            "tags": ["mysql","mysql-5.1","relational"],
-            "credentials": {
-                "name":"dfe428022cd5f4f7e901da2a9ff3ef9a7",
-                "hostname":"172.30.48.22",
-                "host":"172.30.48.22",
-                "port":3306,
-                "user":"umHe9MCRD6jVV",
-                "username":"umHe9MCRD6jVV",
-                "password":"pktKbJgobh5Uo"
-            }
-        }]
-    }
+    gem install caldecott
 
-因此，在 database.yml 設定中，必須在執行階段從變數中動態獲取設定。
+在 tunnel 建立後，程式會詢問你需要執行哪一種指令，以 MySQL 為例，預設提供兩組指令：mysqldump 及 mysql，分別適用於資料備份及維護管理。由於指令是在 local 端執行，所以前提是系統也必須先裝有 MySQL Client 程式，並且 mysqldump 及 mysql 程式路徑必須包含在 PATH 環境變數中，讀者可以先執行 ``mysql --version`` 檢查程式是否存在。
 
 ::
 
-    production:
-      adapter: mysql2
-      encoding: utf8
-      reconnect: false
-      database: <%= JSON.parse(ENV['VCAP_SERVICES'])['mysql-5.1'].first['credentials']['name'] rescue 'blog' %>
-      host: <%= JSON.parse(ENV['VCAP_SERVICES'])['mysql-5.1'].first['credentials']['host'] rescue 'localhost' %>
-      port: <%= JSON.parse(ENV['VCAP_SERVICES'])['mysql-5.1'].first['credentials']['port'] rescue '3306' %>
-      username: <%= JSON.parse(ENV['VCAP_SERVICES'])['mysql-5.1'].first['credentials']['username'] rescue 'root' %>
-      password: <%= JSON.parse(ENV['VCAP_SERVICES'])['mysql-5.1'].first['credentials']['password'] rescue '' %>
-      pool: 5
-      timeout: 5000
+    Starting tunnel to mysql-50d38 on port 10000.
+    1: none
+    2: mysqldump
+    3: mysql
 
-如果想知道 ``ENV['VCAP_SERVICES']`` 變數實際的內容，可以利用 Rails 的 Controller 或 View 將內容印出，例如將以下的 Ruby 程式碼加入 views/layouts/application.html.erb 的 <body>...</body> 區塊內。請注意避免將這些資訊洩漏，以免造成應用程式安全漏洞。
-
-::
-
-    ENV: <%= ENV['VCAP_SERVICES'] %>
-
-資料庫的設定完成後，更新已發佈的應用程式：
-
-::
-
-    vmc update my-first-blog
-
-應用程式更新成功後，即可開啟 http://my-first-blog.cloudfoundry.com/posts ，測試包含資料庫操作的應用程式。
-
+輸入 3 即可透過 MySQL Client 建立資料庫存取連線，如此便可直接下 SQL 語法進行資料庫調校及維護。
 

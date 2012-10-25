@@ -1,70 +1,88 @@
 ************************
-Day 3 開發工具安裝及設定
+發佈第一個應用程式
 ************************
 
-開始使用 VMC 工具
-=================
+本章示範最簡易的 Hello World 應用程式，如何透過 VMC 工具發佈到 Cloud Foundry；這個範例使用 Ruby 程式語言及 Sinatra 框架開發，由於程式碼相當簡單，即使沒有接觸過 Ruby 的朋友也能輕鬆練習。
 
-帳號通過 Cloud Foundry 審核後，就可以開始使用 PaaS 服務及發佈應用程式。目前有兩種方法可以使用 Cloud Foundry 提供的 PaaS 服務：
+發佈 Ruby Sinatra 應用程式
+========================
 
-1. 使用 SpringSource Tool Suite（STS）或 Eclipse，搭配 Cloud Foundry 的擴充套件。
-2. 使用 VMC 指令工具，需要在終端機文字模式下操作。
+因為安裝 vmc 表示系統已有 Ruby 及 RubyGems，所以使用 Ruby 開發第一個應用程式，將是最容易上手的方式。這裡要介紹給讀者 Sinatra 這個微型開發框架，它是能讓 Ruby 快速建立 Web 應用的領域描述語言（DSL）。
 
-STS 是 VMWare 旗下 SpringSource 的開發工具，它是以 Eclipse 為基礎建立的整合開發環境。但是對學習 Cloud Foundry 來說，建議讀者先由 VMC 指令開始入門，比較能夠清楚瞭解操作的過程，本文的說明也將以 VMC 為主。
+http://www.sinatrarb.com/
 
-首先需要確認系統已經裝妥 Ruby 及 RubyGems，我們需要 RubyGems 提供的 gem 指令來安裝 VMC：
-
-1. Windows 只要使用 Ruby 安裝程式，裝好的開發環境就已包含 Ruby 及 RubyGems。
-2. Mac OS X 10.5 之後的版本，已經提供 Ruby 及 RubyGems；若需要手動安裝則建議使用 MacPorts，執行 ``sudo port install rb-rubygems``\ 。
-3. Linux 可以透過套件管理工具安裝，例如 Ubuntu Linux 可以執行 ``sudo apt-get install ruby-full rubygems``\ 。
-
-執行 ``gem --version`` 若顯示版本號碼，就表示系統已有 RubyGems 軟體。
-
-接下來使用 ``gem install vmc`` 指令，將會使用 RubyGems 安裝 VMC 工具。需要注意的是，執行 ``gem`` 指令時，Mac 及 Linux 使用者需要注意權限問題，例如在指令前面加上 ``sudo`` 或是以 ``su`` 先切換成 root 身分。
-
-執行 ``vmc version`` 檢查是否有版本編號顯示，若顯示版本編號則表示 VMC 安裝成功。
-
-若一切順利，就可以開始使用 VMC 存取 Cloud Foundry 的服務。取得 VMC 指令的完整說明，可以使用 ``vmc help``\ 。
-
-首先，我們使用 CloudFoundry.com 開放的 PaaS 服務，它提供的 URL 是 ``api.cloudfoundry.com``\ ，先執行 ``vmc target api.cloudfoundry.com`` 指令設定這組 URL。執行成功會有以下的訊息，若出現失敗訊息，請試著以瀏覽器打開網址，檢查網路連線是否正常，並嘗試多執行幾次指令。
+首先需要用 RubyGems 安裝 Sinatra：
 
 ::
 
-    Successfully targeted to [http://api.cloudfoundry.com]
+    gem install sinatra
 
-再來是以通過審核的帳號（電子郵件）及密碼，執行 ``vmc login`` 指令登入。
-
-::
-
-    Attempting login to [http://api.cloudfoundry.com]
-    Email: 輸入電子郵件信箱（帳號）
-    Password: 輸入密碼
-    Successfully logged into [http://api.cloudfoundry.com]
-
-執行 ``vmc info`` 可以檢視記憶體容量、服務及應用程式使用量。
+建立一個新資料夾，命名為 ``hello``\ ，將工作路徑切換到這個目錄下：
 
 ::
 
-    Usage:    Memory   (576.0M of 2.0G total)
-              Services (0 of 16 total)
-              Apps     (4 of 20 total)
+    mkdir hello
+    cd hello
 
-從訊息可以發現，目前 CloudFoundry.com 提供開發者免費的額度包括：2GB記憶體容量、16組服務數量、20組應用程式數量。
+使用文字編輯器建立 ``hello.rb`` 程式，儲存在 hello 資料夾，並包含以下程式碼：
 
-其它可供查詢資訊的指令包括：
+.. code-block:: ruby
 
-* ``vmc runtimes``
-  
-  顯示 PaaS 支援的程式語言類型。
-* ``vmc frameworks``
-  
-  顯示 PaaS 支援的開發框架種類。
-* ``vmc services``
-  
-  列出 PaaS 提供的服務。
+    require 'sinatra'
+    
+    get '/hi' do
+        "Hello World!"
+    end
 
-更多關於 Cloud Foundry 的安裝說明，可以參考這份文件：
+先在本地端測試程式是否可以執行：
 
-http://start.cloudfoundry.com/getting-started.html
+::
+
+    ruby -rubygems hello.rb
+
+若程式執行成功，會顯示 WEBrick 測試伺服器的訊息如下。
+
+::
+
+    [2012-03-16 22:35:54] INFO  WEBrick 1.3.1
+    [2012-03-16 22:35:54] INFO  ruby 1.8.7 (2011-12-28) [i686-darwin10]
+    == Sinatra/1.3.2 has taken the stage on 4567 for development with backup from WEBrick
+    [2012-03-16 22:35:54] INFO  WEBrick::HTTPServer#start: pid=5286 port=4567
+
+從訊息可以看到預設的 Port 為 4567，使用瀏覽器開啟 http://localhost:4567/ ；如果看到「Hello World!」訊息，就表示程式可以正確執行。測試完成後，使用「Ctrl+C」終止程式。
+
+接下來，將應用程式發佈到 Cloud Foundry。執行 vmc 的 push 指令：
+
+::
+
+    vmc push
+
+這個步驟需要輸入一些設定，需要注意應用程式名稱不能和其它開發者的命名重複，因為 CloudFoundry.com 是開放服務，有些名稱可能已經被其它開發者使用；通常應用程式的名稱也會作為子網域名稱，例如「hello-ruby」應用程式的子網域可以設定為「hello-ruby.cloudfoundry.com」：
+
+::
+
+    Would you like to deploy from the current directory? [Yn]: y
+    Application Name: 輸入應用程式名稱
+    Application Deployed URL [應用程式名稱.cloudfoundry.com]: 
+    Detected a Sinatra Application, is this correct? [Yn]: y
+    Memory Reservation (64M, 128M, 256M, 512M, 1G, 2G) [128M]: 
+    Creating Application: OK
+    Would you like to bind any services to '應用程式名稱'? [yN]: 
+
+看到「Starting Application: OK」訊息，就表示應用程式已發佈成功。
+
+::
+ 
+    Uploading Application:
+      Checking for available resources: OK
+      Packing application: OK
+      Uploading (0K): OK   
+    Push Status: OK
+    Staging Application: OK                                                         
+    Starting Application: OK
+
+用瀏覽器打開「應用程式名稱.cloudfoundry.com」，若一切運作順利，將會看到和本地端測試相同的結果。
+
+目前 CloudFoundry.com 並不提供自訂網域名稱的服務，所以上述設定的子網域名稱，就是將開發好的應用程式公諸於世時所使用的網址。換句話說，子網域名稱是先搶先贏，如果已經想到如何將應用程式命名，可以儘快註冊保留。
 
 

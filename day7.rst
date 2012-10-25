@@ -1,150 +1,69 @@
-************************
-Day 7 建置私有雲測試平台
-************************
+*********
+佈署雲平台
+*********
 
-建置 Micro Cloud Foundry
-========================
+安裝 VCAP 伺服器
+===============
 
-Micro Cloud Foundry 可以方便開發者在自己的電腦建立 PaaS 的測試環境，它提供的功能和 Cloud Foundry 開放的 PaaS 完全相同，但只要透過 VMWare Player 等虛擬機器軟體，就能在開發者的電腦執行。
+前面介紹的 Cloud Foundry 包括 CloudFoundry.com 以及使用 Micro Cloud Foundry 建立開發測試專用的 CloudFoundry.me，都是由 VMWare 提供的 PaaS 服務。若需要建立私有 PaaS，或者想要像 VMWare、AppFog 一樣提供 PaaS 服務，就必須自行安裝架設 VCAP 伺服器。
 
-通常開發框架（frameworks）都會提供測試的工具，例如 Ruby on Rails 使用 WEBrick 作為開發端測試的伺服器；在開發階段，應用程式必須先利用開發框架的方法測試，功能沒有問題再發佈到 PaaS。但是 PaaS 畢竟與開發端的環境不會完全相同，應用程式發佈到 PaaS 仍需要再次仔細測試，才會知道程式有哪些部分需要修正。
+VCAP 的全名是 VMware's Cloud Application Platform，它包含建立 Cloud Foundry PaaS 所需的程式，在 GitHub 網站可以取得完整的原始碼：
 
-Cloud Foundry 的應用程式，可以將一份專案發佈為不同名稱的應用程式，也可以發佈到不同的目標伺服器（target）。Micro Cloud Foundry 讓開發者可以在區域網路的環境中，建置測試專用的迷你 PaaS，讓尚處於開發、測試階段的應用程式，不必貿然發佈到正式（production）的 PaaS 服務，只要利用開發端的環境就可以測試發佈後的應用程式。
+https://github.com/cloudfoundry/vcap
 
-由於 Micro Cloud Foundry 與 Cloud Foundry 的 PaaS 功能一致，因此應用程式只要能在 Micro Cloud Foundry 發佈、測試成功，只需要切換目標伺服器（target），就能將應用程式發佈到正式的 PaaS。
+VCAP 可以安裝在多部實體或虛擬機器，作為節點，組成大型、可延展的 PaaS 服務平台，例如由 16 個 routers 及 8 個 cloud controller 來提供服務。
 
-使用帳號密碼登入 CloudFoundry.com 網站，可以看到 Manage 及 Downloads 兩個項目。點選「Download Micro Cloud Foundry VM」取得最新版的虛擬機器壓縮檔（例如：micro-1.2.0.zip），將下載的檔案解壓縮至桌面或其他磁碟位置。
+但開發者也可以只用一部虛擬機器、安裝 VCAP，就能建立一個麻雀雖小、五臟俱全的 PaaS；例如 Micro Cloud Foundry 就是以 Ubuntu Linux 安裝 VCAP 建立的虛擬機器。
 
-.. image:: images/cloudfoundry-micro.png
+安裝 VCAP 的軟硬體配置需求如下：
 
-下載的 ZIP 檔案解壓縮，會得到 micro-disk1.vmdk 及 micro.vmx 兩個檔案。其中 vmx 是 VMWare 的虛擬機器，可以使用下列的軟體開啟。
+* Ubuntu Linux 64bit （下載： http://www.ubuntu.com/download/server/download ）
+* 至少 1GB 記憶體
 
-* VMWare Workstation
-* VMWare Fusion
-* VMWare Player
+以筆者的測試環境來說，是使用 VirtualBox 4.1.12 虛擬機器軟體，配置 1GB 以上記憶體，網路卡使用橋接模式（方便區網其他機器建立連線），並安裝 Ubuntu Server 10.04.3 64bit，預先安裝 OpenSSH Server，以方便使用 ssh 進行後續的安裝設定。
 
-其中 Fusion 是 Mac OS X 系統專用，而 Workstation 及 Player 兩個版本則支援 Windows 及 Linux 作業系統。Fusion 與 Workstation 需要付費購買正版軟體，若讀者只有測試的需要，下載安裝免費的 VMWare Player 版本即可。
-
-Micro Cloud Foundry 預設需要 VMWare 虛擬機器軟體，可以不必多加設定就能立即執行。除此之外，讀者其實還有其它選擇，例如支援 Windows、Linux 及 Mac OS X 的 VirtualBox 軟體，功能和 VMWare 的虛擬機器軟體類似，它也支援 VMWare 的 vmdk 虛擬磁碟檔案格式，因此 VirtualBox 能夠透過以下的設定步驟，成功執行 Micro Cloud Foundry。
-
-建立新的虛擬機器，作業系統類型選擇 Linux / Ubuntu (64bit)。
-
-.. image:: images/virtualbox-micro-01.png
-
-記憶體建議至少配置 1024MB 以上。
-
-.. image:: images/virtualbox-micro-02.png
-
-不必建立新的虛擬磁碟，直接選擇解壓縮得到的 micro-disk1.vmdk 即可。
-
-.. image:: images/virtualbox-micro-03.png
-
-將網路設定為 Bridged Adapter 模式。
-
-.. image:: images/virtualbox-micro-05.png
-
-Micro Cloud Foundry 的主畫面。 
-
-.. image:: images/micro-screen-01.png
-
-Micro Cloud Foundry 的設定直接透過純文字畫面的選單操作，
-
-1. configure （設定）
-2. refresh console （重新顯示畫面）
-3. expert menu （進階功能）
-4. help （輔助說明）
-5. shutdown VM （關機）
-
-第一次執行需要先進行設定，按下選單代號 1 及 Enter，就會要求輸入一組新密碼。
+VCAP 提供相當簡便的 shell script 安裝程式，以下的指令從 GitHub 網站取得 vcap_dev_setup 程式，執行後就會開始一連串自動化的安裝程序；在過程中會自動下載安裝所需的檔案，請確保網路連線暢通、並避免機器不正常關閉或終止安裝程式。
 
 ::
 
-    Set password Micro Cloud Foundry VM user (vcap)
-    Password: ********
-    Confirmation: ********
+    wget https://raw.github.com/cloudfoundry/vcap/master/dev_setup/bin/vcap_dev_setup
+    chmod a+x vcap_dev_setup
+    ./vcap_dev_setup
 
-接下來是網路設定，可以選擇 DHCP 或 Static。若是只作為內部測試用途，使用區網 IP 位址即可。
-
-::
-
-    1. DHCP
-    2. Static
-
-登入 CloudFoundry.com 網站取得 token 代碼，輸入一組子網域名稱（英文小寫或數字、可用「-」符號），在本文的範例中，我們使用 your-cloud-name 這個命名。
-
-.. image:: images/micro-token-1.png
-
-設定完成後，會顯示一組 configuration token，務必將它記下來。
-
-.. image:: images/micro-token-2.png
-
-如果忘記 token，可以按 Regenerate Token 重新產生一組（但無法找回已遺失的 Toek）。
-
-.. image:: images/micro-token-3.png
-
-目前 CloudFoundry 無法支援自訂網域名稱，只能用 \*.cloudfoundry.me 的子網域，所以也是先搶先贏，讀者可以儘快將想要的名稱註冊保留。
+安裝完成後，需要先登出，再重新登入一次，這樣 VCAP 的設定才會載入，接著就可以啟動 vcap_dev 服務。
 
 ::
 
-    Enter Micro Cloud Foundry configuration token or offline domain name:
+    ~/cloudfoundry/vcap/dev_setup/bin/vcap_dev start
 
-接下來等待 DNS 更新及安裝動作完成。
+使用虛擬機器安裝 VCAP 是個理想的選擇，在安裝過程中，每個步驟成功後，可以立刻建立 SNAPSHOT 將階段保存起來，方便後續發生問題可以還原。未來需要增加 PaaS 的節點時，也只需要將虛擬機器複製一份，省下每次都要重新安裝 VCAP 的麻煩。
 
-.. image:: images/micro-screen-config-done.png
-
-設定完成之後的主畫面（範例）：
-
-.. image:: images/micro-screen-02.png
-
-用 ping 指令測試，出現虛擬機器的 IP 表示 Cloud Foundry 的 DNS 設定已經更新。
+Cloud Foundry 提供一組 ``vcap.me`` 的網域名稱，讓 VCAP 安裝者可以方便進行測試；若使用 ping 或 nslookup 查詢這個網域，可以發現它其實對應到 localhost（127.0.0.1）。
 
 ::
 
-    ping your-cloud-name.cloudfoundry.me
-    ping api.your-cloud-name.cloudfoundry.me
+    $ nslookup vcap.me
 
-使用瀏覽器或 ``curl`` 指令，可以測試 PaaS 服務是否已成功啟用。
+    Non-authoritative answer:
+    Name:   vcap.me
+    Address: 127.0.0.1
 
-::
+我們通常不會直接用 VCAP 伺服器開發應用程式，例如我們可能在一台開發用的機器（192.168.0.100），需要將應用程式發佈到安裝 VCAP 伺服器的虛擬機器（192.168.0.101）；Cloud Foundry 建議的作法，是利用 ssh 指令建立通道。
 
-    curl http://api.your-cloud-name.cloudfoundry.me
-
-如果服務尚未建立完成，會得到以下的錯誤訊息。
-
-::
-
-    Error (JSON 404): VCAP ROUTER: 404 - DESTINATION NOT FOUND
-
-需要等待多久必須視機器的效能而定；當服務已經啟用完成，就可以得到以下的歡迎訊息。
+以下的指令將 localhost 的 80 或 8080 連接埠對應到虛擬機器，john@192.168.0.101 是此範例的 Ubuntu Server 登入帳號及區網 IP 位址（若 80 連接埠已經被其他程式佔用，可以改為 8080 或其它數字）。
 
 ::
 
-    Welcome to VMware's Cloud Application Platform
+    sudo ssh -L 80:192.168.0.101:80 john@192.168.0.101 -N
 
-使用 vmc 指令將目標伺服器（target）切換為 Micro Cloud Foundry 專用的 URL：
-
-::
-
-    vmc target api.your-cloud-name.cloudfoundry.me
-
-因為新建的 Micro Cloud Foundry 並沒有開發者的帳號密碼，同時它也是獨立於 CloudFoundry.com 的服務，所以需要用 vmc 的 register 指令建立一組新帳號。
+接下來，就可以將目標伺服器（target）切換為 vcap.me，例如：
 
 ::
 
-    vmc register
+    vmc target api.vcap.me
 
-輸入電子郵件及密碼（可自訂、與 CloudFoundry.com 的帳號無關），等待新帳號建立完成。
+使用 ``vmc push`` 等指令，就可以將應用程式發佈到以 VCAP 建立的 PaaS 服務。
 
-::
+對於有開發 PaaS 平台需求的廠商來說，開放源碼的 VCAP 是個相當好的基礎，可以不必重新發明輪子、設計複雜的底層架構問題，更能專注於開發更有價值的服務，例如將自家的程式語言、開發框架、服務及工具整合到 Cloud Foundry；對於應用程式開發者來說，只要熟悉 VMC 工具的操作及 Cloud Foundry 的基本認識，就能選擇各家以 Cloud Foundry 為基礎建立的 PaaS 服務。
 
-    Email: 設定電子郵件信箱
-    Password: 密碼
-    Verify Password: 確認密碼
-    Creating New User: OK
-    Attempting login to [http://api.your-cloud-name.cloudfoundry.me]
-    Successfully logged into [http://api.your-cloud-name.cloudfoundry.me]
-
-執行 ``vmc register`` 指令之後，除了會建立一組帳號外，也會自動完成登入。若日後需要重新登入，或改以其它帳號登入，就必須執行 ``vmc login`` 指令。
-
-在 ``vmc target`` 設定為 Micro Cloud Foundry 的 URL 後，就可以使用 ``vmc push`` 發佈應用程式。Micro Cloud Foundry 的操作方法，與 api.cloudfoundry.com 完全相同；在 Micro 建立的應用程式與服務，都是獨立在虛擬機器中運作，與 CloudFoundry.com 並不相干。
-
+如果讀者想瞭解更多關於 VCAP 的技術，可以瀏覽 CloudFoundry.org 提供的文件、原始碼、部落格或郵件論壇等服務，相信只要更多人認識並參與 Cloud Foundry 的發展，開放源碼 PaaS 的未來就會更加美好。

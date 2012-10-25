@@ -1,33 +1,27 @@
-*************************
-Day 1 認識 Cloud Foundry
-*************************
+******************
+認識 Cloud Foundry
+******************
 
-開放源碼的雲端解決方案
-======================
+Cloud Foundry 是開放源碼的 PaaS 解決方案，支援多種程式語言、開發框架及資料庫等服務，而且更容易開發、測試及佈署。本書將從零開始，和學習者一起開啟雲端應用程式開發的大門。
 
-全球虛擬化技術領導廠商 VMWare，近年致力於發展雲端解決方案，推出包含 vCloud 等「基礎架構即服務」（IaaS，Infrastructure as a Service）。VMWare 在併購 SpringSource 後，更積極發展「平台即服務」（PaaS，Platform as a Service），此舉揭示 VMWare 佈局雲端產品的企圖心，以下是 VMWare 近年的發展：
+開放源碼的平台即服務
+================
 
-* 2009年併購 SpringSource 公司，旗下開放源碼的 Spring Framework 是被廣泛採用的 Java 應用程式開發框架。
-* 2010年與 Google 公司合作，使 Google App Engine 支援佈署 Spring Java 應用程式。
-* 2011年推出 Cloud Foundry，是業界第一款開放源碼 PaaS。
+平台即服務（Platform as a Service，簡稱PaaS）是一種雲端運算服務，介於軟體即服務與基礎設施即服務之間。它提供應用程式開發所需的基礎服務，讓開發者更省時省力達到事半功倍的成果。
 
-VMWare 的虛擬化技術能夠滿足企業對 IaaS 的需求，但是 IaaS 若少了配套的 PaaS 方案，對企業來說就像擁有硬體卻缺少合適的軟體，並無法滿足在雲端部署資訊系統的需求；因此，Cloud Foundry 的發展，對於採用 VMWare 虛擬化技術的企業來說，帶來更多往雲端發展的願景。 
+在虛擬化技術領域相當具有優勢的 VMWare 公司，近年來致力於雲端解決方案的發展，例如提供給企業基礎設施即服務（IaaS）產品 vCloud 等，在雲端服務市場佔有一席之地。在併購 SpringSource 公司後，VMWare 的雲端產品布局更一舉打進平台即服務的層級，以下是 VMWare 近年的發展：
 
-將應用程式發佈到雲端平台，就能使用平台提供的便利服務，例如免除伺服器安裝設定的麻煩、輕鬆享有較高規格的防火牆及安全性，應用程式得到良好的水平可延展性（horizontal scalability），不必擔心未來大量成長造成硬體不敷使用、架構需要大幅調整，費用部分也可依照實際需求付費，減少過度投資造成的浪費。
+* 2009年併購 SpringSource 公司，其開放源碼的 Spring Framework 是被廣泛採用的 Java 應用程式開發框架。
+* 2010年與 Google 公司合作，促使 Google App Engine 支援 Spring（Java）應用程式佈署。
+* 2011年推出 Cloud Foundry，帶來業界第一個開放源碼的平台即服務產品。
 
-雖然「平台即服務」的構想很美好，但開發者很容易被各種因素困擾：
+不難想像 VMWare 為何要投入開放源碼的 PaaS 開發，畢竟架設 PaaS 需要 IaaS 的軟硬體基礎設施，而 VMWare 的主力產品就是提供 IaaS 所需的虛擬化技術。Cloud Foundry 讓擁有 IaaS 的廠商，可以進一步發展 PaaS 層級的服務，帶來更多雲端運算發展的想像空間。
 
-1. 現有的軟體是否需要大幅修改？
-2. 能不能將應用程式遷移到其它 PaaS 服務？
-3. 是否要學習新技術、API？
+應用程式發佈到 PaaS 雲端平台，就能直接利用平台提供的便利基礎服務。例如：免除軟硬體建置及伺服器安裝設定的麻煩、擁有充足的網路頻寬及較安全的防火牆等。應用程式因此具有更好的水平可延展性（horizontal scalability），可以隨時依負載量進行水平擴充（scale-out）。通常 PaaS 依實際用量計費，不必擔心軟硬體購置不足無法應付未來成長，也不用在初期過度投資而造成閒置浪費。
 
-Cloud Foundry 是開放源碼的 PaaS 解決方案，它的授權方式跟 Google Android 同樣都是 Apache License，因此除了商標之外，開發社群可以複製、修改及散佈 Cloud Foundry 開放分享的原始碼，廠商不僅可以使用 VMWare 提供的開放平台服務，也可以自行架設或選擇其它平台服務商採用 Cloud Foundry 為基礎提供的服務。
+開發者可以放心踏進 Cloud Foundry 的世界，它是開放源碼軟體，採用和 Google Android 系統一樣的 Apache License 授權方式；因此除了商標之外，任何人皆可以複製、修改及散佈它的原始碼。除了 VMWare 自行架設提供的開放平台外，開發者也可以選擇自行架設或採用其他廠商提供的 Cloud Foundry 平台，因此有更多選擇較不受限制。
 
-作為一個開放的 PaaS 解決方案，Cloud Foundry 能相容於許多已廣受開發者採用的技術；例如 Java、Ruby 及 PHP 等程式語言及 MySQL、PostgreSQL 等資料庫；對不少開發者而言，不需要重新學習新的程式語言、開發框架，只要瞭解發佈到雲端的方法及架構需要做的調整，就能享受佈署 PaaS 所帶來的好處。
-
-但是過去已經建置的應用程式，若想佈署到 Cloud Foundry，需不需要大幅修改呢？其實 Cloud Foundry 對應用程式並沒有太多規範，但這個問題與應用程式的架構及採用的開發框架有關，舉例來說，若是使用 Rails 或 Grails 開發框架，對資料庫的存取多一層 ORM 的抽象化處理，並且也考慮到可擴展性（scalability）問題，例如使用網路磁碟或 Amazon S3 等雲端儲存服務，取代直接對本地磁碟的檔案存取，要佈署到 Cloud Foundry 幾乎毫不費力。
-
-若是考慮遷移到其它 PaaS 的問題，就需要慎選多數 PaaS 能相容的組合，雖然 Cloud Foundry 支援相當多程式語言及框架，但其它 PaaS 並不見得能夠提供相容。舉例來說，Cloud Foundry 支援 Node.js 框架，而 Windows Azure、Heroku...等許多 PaaS 也都提供 Node.js 的支援，若以 Node.js 開發應用程式，想要順利遷移就比較不成問題。
+相容多種開放源碼的開發環境，也是 Cloud Foundry 的優點，許多開源世界的程式語言（例如 Java、Ruby 或 PHP）及資料庫（例如 MySQL 及 PostgreSQL），都可以在 Cloud Foundry 平台中運作；開發者可以直接利用已經熟悉的技術和工具，而免去重新學習的困擾。
 
 Cloud Foundry 的平台及工具
 ==========================
